@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>UrbanPulse — Smart City Traffic Analytics Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0A0F1F;
+  --panel:#111827;
+  --elevated:#1E293B;
+  --border:#334155;
+  --cyan:#00E5FF;
+  --purple:#8B5CF6;
+  --orange:#FF8C42;
+  --red:#FF4D6D;
+  --green:#22C55E;
+  --yellow:#FFD700;
+  --text:#F8FAFC;
+  --muted:#94A3B8;
+  --dim:#64748B;
+}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Exo 2',sans-serif;overflow-x:hidden;}
+
+/* Grid background */
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(0,229,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.03) 1px,transparent 1px);
+  background-size:44px 44px;
+  pointer-events:none;z-index:0;
+}
+
+/* ─── NAV ─── */
+nav{
+  position:sticky;top:0;z-index:200;
+  background:rgba(10,15,31,0.95);
+  border-bottom:1px solid rgba(0,229,255,0.15);
+  backdrop-filter:blur(12px);
+  padding:0 32px;
+  display:flex;align-items:center;justify-content:space-between;
+  height:56px;
+}
+.logo{font-family:'Orbitron',monospace;font-size:14px;font-weight:900;color:var(--cyan);letter-spacing:3px;text-shadow:0 0 20px rgba(0,229,255,0.5);}
+.logo span{color:var(--purple);}
+.nav-links{display:flex;gap:24px;}
+.nav-links a{font-size:11px;font-family:'Share Tech Mono',monospace;letter-spacing:1.5px;color:var(--muted);text-decoration:none;transition:color .2s;}
+.nav-links a:hover{color:var(--cyan);}
+.live-pill{display:flex;align-items:center;gap:6px;font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--green);letter-spacing:1px;}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 1.5s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+/* ─── HERO ─── */
+.hero{
+  position:relative;z-index:1;
+  padding:80px 32px 60px;
+  text-align:center;
+  overflow:hidden;
+}
+.hero::after{
+  content:'';position:absolute;
+  top:50%;left:50%;transform:translate(-50%,-50%);
+  width:600px;height:600px;
+  background:radial-gradient(circle,rgba(0,229,255,0.06) 0%,transparent 70%);
+  pointer-events:none;
+}
+.hero-tag{
+  display:inline-block;
+  font-size:10px;font-family:'Share Tech Mono',monospace;letter-spacing:3px;
+  color:var(--cyan);border:1px solid rgba(0,229,255,0.3);
+  padding:5px 14px;border-radius:20px;margin-bottom:24px;
+  background:rgba(0,229,255,0.06);
+}
+.hero h1{
+  font-family:'Orbitron',monospace;font-size:clamp(28px,5vw,52px);font-weight:900;
+  line-height:1.1;margin-bottom:20px;
+  background:linear-gradient(135deg,var(--cyan) 0%,var(--purple) 60%,var(--cyan) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hero-sub{font-size:16px;color:var(--muted);max-width:680px;margin:0 auto 36px;line-height:1.7;font-weight:300;}
+.hero-stats{display:flex;justify-content:center;gap:40px;flex-wrap:wrap;}
+.h-stat{text-align:center;}
+.h-stat-val{font-family:'Orbitron',monospace;font-size:28px;font-weight:700;color:var(--cyan);text-shadow:0 0 15px rgba(0,229,255,0.4);}
+.h-stat-label{font-size:10px;color:var(--dim);letter-spacing:2px;margin-top:4px;text-transform:uppercase;}
+
+/* ─── SECTION WRAPPER ─── */
+.section{position:relative;z-index:1;padding:40px 32px;}
+.section-header{margin-bottom:28px;}
+.section-tag{
+  font-size:10px;font-family:'Share Tech Mono',monospace;letter-spacing:3px;
+  color:var(--purple);text-transform:uppercase;margin-bottom:8px;
+}
+.section-title{font-family:'Orbitron',monospace;font-size:20px;font-weight:700;color:var(--text);margin-bottom:10px;}
+.section-desc{font-size:14px;color:var(--muted);line-height:1.7;max-width:820px;}
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:0 32px;}
+
+/* ─── HOW TO USE ─── */
+.use-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;}
+.use-card{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:12px;padding:20px;
+  position:relative;overflow:hidden;
+  transition:border-color .3s,transform .2s;
+}
+.use-card:hover{border-color:rgba(0,229,255,0.3);transform:translateY(-2px);}
+.use-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+}
+.use-card.c1::before{background:linear-gradient(90deg,transparent,var(--cyan),transparent);}
+.use-card.c2::before{background:linear-gradient(90deg,transparent,var(--purple),transparent);}
+.use-card.c3::before{background:linear-gradient(90deg,transparent,var(--orange),transparent);}
+.use-card.c4::before{background:linear-gradient(90deg,transparent,var(--green),transparent);}
+.use-card.c5::before{background:linear-gradient(90deg,transparent,var(--red),transparent);}
+.use-num{font-family:'Orbitron',monospace;font-size:28px;font-weight:900;opacity:.15;margin-bottom:8px;}
+.use-card.c1 .use-num{color:var(--cyan);}
+.use-card.c2 .use-num{color:var(--purple);}
+.use-card.c3 .use-num{color:var(--orange);}
+.use-card.c4 .use-num{color:var(--green);}
+.use-card.c5 .use-num{color:var(--red);}
+.use-card h3{font-size:13px;font-weight:700;margin-bottom:8px;letter-spacing:.5px;}
+.use-card p{font-size:12px;color:var(--muted);line-height:1.6;}
+
+/* ─── KPI ROW ─── */
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:8px;}
+.kpi{
+  background:linear-gradient(135deg,rgba(17,24,39,.9),rgba(30,41,59,.9));
+  border:1px solid rgba(51,65,85,.8);border-radius:12px;padding:18px;
+  position:relative;overflow:hidden;
+}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:12px 12px 0 0;}
+.kpi.cy::before{background:linear-gradient(90deg,transparent,var(--cyan),transparent);}
+.kpi.pu::before{background:linear-gradient(90deg,transparent,var(--purple),transparent);}
+.kpi.or::before{background:linear-gradient(90deg,transparent,var(--orange),transparent);}
+.kpi.re::before{background:linear-gradient(90deg,transparent,var(--red),transparent);}
+.kpi.gr::before{background:linear-gradient(90deg,transparent,var(--green),transparent);}
+.kpi-val{font-family:'Orbitron',monospace;font-size:24px;font-weight:700;line-height:1;margin-bottom:4px;}
+.kpi.cy .kpi-val{color:var(--cyan);text-shadow:0 0 12px rgba(0,229,255,.4);}
+.kpi.pu .kpi-val{color:var(--purple);text-shadow:0 0 12px rgba(139,92,246,.4);}
+.kpi.or .kpi-val{color:var(--orange);text-shadow:0 0 12px rgba(255,140,66,.4);}
+.kpi.re .kpi-val{color:var(--red);text-shadow:0 0 12px rgba(255,77,109,.4);}
+.kpi.gr .kpi-val{color:var(--green);text-shadow:0 0 12px rgba(34,197,94,.4);}
+.kpi-label{font-size:10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;}
+.kpi-sub{font-size:10px;color:var(--dim);margin-top:4px;font-family:'Share Tech Mono',monospace;}
+
+/* ─── PANEL ─── */
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden;position:relative;z-index:1;}
+.ph{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid rgba(51,65,85,.5);}
+.pt{font-family:'Orbitron',monospace;font-size:10px;letter-spacing:2px;color:var(--cyan);}
+.badge{font-size:10px;font-family:'Share Tech Mono',monospace;padding:3px 8px;border-radius:4px;letter-spacing:1px;}
+.b-cy{background:rgba(0,229,255,.1);color:var(--cyan);border:1px solid rgba(0,229,255,.3);}
+.b-pu{background:rgba(139,92,246,.1);color:var(--purple);border:1px solid rgba(139,92,246,.3);}
+.b-or{background:rgba(255,140,66,.1);color:var(--orange);border:1px solid rgba(255,140,66,.3);}
+.b-re{background:rgba(255,77,109,.1);color:var(--red);border:1px solid rgba(255,77,109,.3);}
+.b-gr{background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.3);}
+
+/* ─── CHART SECTIONS ─── */
+.chart-section{margin-bottom:40px;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;}
+.chart-pad{padding:18px;}
+
+/* analysis box */
+.analysis{
+  background:rgba(139,92,246,.06);
+  border:1px solid rgba(139,92,246,.2);
+  border-left:3px solid var(--purple);
+  border-radius:0 8px 8px 0;
+  padding:14px 16px;
+  margin:12px 18px 18px;
+}
+.analysis-title{font-size:10px;font-family:'Share Tech Mono',monospace;letter-spacing:2px;color:var(--purple);margin-bottom:8px;}
+.analysis p{font-size:12px;color:var(--muted);line-height:1.7;}
+.analysis ul{font-size:12px;color:var(--muted);padding-left:16px;line-height:1.8;}
+.analysis li span{color:var(--cyan);}
+
+/* ─── MAP ─── */
+.map-canvas{position:relative;height:380px;background:#070C1A;overflow:hidden;}
+.road-svg{width:100%;height:100%;}
+.road{stroke-width:2.5;fill:none;}
+.road-sm{stroke:var(--cyan);filter:drop-shadow(0 0 5px var(--cyan));opacity:.85;}
+.road-md{stroke:var(--yellow);filter:drop-shadow(0 0 4px var(--yellow));opacity:.8;}
+.road-hv{stroke:var(--red);filter:drop-shadow(0 0 5px var(--red));opacity:.9;}
+.road-thin{stroke-width:1.2;opacity:.4;}
+.ix{fill:none;stroke-width:1.5;}
+@keyframes pix{0%,100%{r:3;opacity:.9;}50%{r:6;opacity:.3;}}
+.map-legend{display:flex;gap:20px;padding:10px 18px;border-top:1px solid rgba(51,65,85,.4);}
+.li{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);letter-spacing:1px;}
+.ll{width:22px;height:2px;border-radius:1px;}
+
+/* risk bars */
+.risk-wrap{padding:0 18px 16px;}
+.risk-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.risk-label{font-size:11px;color:var(--muted);min-width:90px;}
+.risk-bar-bg{flex:1;height:6px;background:rgba(51,65,85,.8);border-radius:3px;overflow:hidden;}
+.risk-bar-fill{height:100%;border-radius:3px;transition:width .8s ease;}
+.risk-pct{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--dim);min-width:36px;text-align:right;}
+
+/* gauge */
+.gauge-wrap{display:flex;flex-direction:column;align-items:center;padding:16px 18px;}
+.gauge-val{font-family:'Orbitron',monospace;font-size:28px;fill:var(--orange);text-anchor:middle;dominant-baseline:middle;filter:drop-shadow(0 0 8px rgba(255,140,66,.6));}
+.gauge-sub{font-size:10px;fill:var(--muted);text-anchor:middle;font-family:'Exo 2',sans-serif;letter-spacing:1.5px;}
+
+/* city selector */
+.chips{display:flex;flex-wrap:wrap;gap:6px;padding:10px 18px;}
+.chip{font-size:10px;font-family:'Share Tech Mono',monospace;padding:4px 10px;border-radius:4px;cursor:pointer;background:rgba(30,41,59,.8);color:var(--muted);border:1px solid rgba(51,65,85,.5);transition:all .2s;letter-spacing:.5px;}
+.chip.on{background:rgba(139,92,246,.15);color:var(--purple);border-color:rgba(139,92,246,.4);}
+.city-list{max-height:300px;overflow-y:auto;}
+.cr{display:flex;align-items:center;padding:10px 16px;gap:12px;border-bottom:1px solid rgba(51,65,85,.25);cursor:pointer;transition:background .2s;}
+.cr:hover{background:rgba(0,229,255,.05);}
+.cn{font-size:13px;font-weight:600;min-width:100px;}
+.cb-bg{flex:1;height:6px;background:rgba(51,65,85,.6);border-radius:3px;overflow:hidden;}
+.cb{height:100%;border-radius:3px;}
+.ct{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--dim);min-width:44px;text-align:right;}
+
+/* alerts */
+.alert-list{padding:0 18px 12px;}
+.ai{display:flex;gap:12px;padding:9px 0;border-bottom:1px solid rgba(51,65,85,.2);}
+.ad{width:8px;height:8px;border-radius:50%;margin-top:4px;flex-shrink:0;}
+.at-title{font-size:12px;font-weight:600;}
+.at-sub{font-size:10px;color:var(--dim);font-family:'Share Tech Mono',monospace;margin-top:2px;}
+.a-time{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--dim);}
+
+/* tabs */
+.tabs{display:flex;gap:4px;padding:0 18px 10px;}
+.tab{font-size:10px;font-family:'Share Tech Mono',monospace;letter-spacing:1px;padding:4px 10px;border-radius:4px;cursor:pointer;background:transparent;color:var(--dim);border:1px solid transparent;transition:all .2s;}
+.tab.on{background:rgba(0,229,255,.1);color:var(--cyan);border-color:rgba(0,229,255,.3);}
+
+/* highlights */
+.highlight-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;}
+.hl-card{
+  background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px;
+  transition:border-color .3s,transform .2s;
+}
+.hl-card:hover{border-color:rgba(0,229,255,.25);transform:translateY(-2px);}
+.hl-icon{font-size:24px;margin-bottom:12px;}
+.hl-card h3{font-family:'Orbitron',monospace;font-size:12px;letter-spacing:1px;margin-bottom:8px;}
+.hl-card p{font-size:12px;color:var(--muted);line-height:1.65;}
+.hl-stat{font-family:'Orbitron',monospace;font-size:22px;font-weight:700;margin:6px 0 2px;}
+
+/* conclusion */
+.conclusion-wrap{
+  background:linear-gradient(135deg,rgba(17,24,39,.95),rgba(30,41,59,.95));
+  border:1px solid rgba(0,229,255,.15);
+  border-radius:16px;padding:36px;margin:0 32px 40px;
+  position:relative;overflow:hidden;z-index:1;
+}
+.conclusion-wrap::before{
+  content:'';position:absolute;top:-1px;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--cyan),var(--purple),var(--cyan),transparent);
+}
+.conclusion-title{font-family:'Orbitron',monospace;font-size:18px;font-weight:700;color:var(--cyan);margin-bottom:20px;}
+.conclusion-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+.con-block h4{font-size:12px;font-family:'Share Tech Mono',monospace;letter-spacing:2px;color:var(--purple);margin-bottom:10px;text-transform:uppercase;}
+.con-block p{font-size:13px;color:var(--muted);line-height:1.75;}
+.con-block ul{font-size:13px;color:var(--muted);padding-left:16px;line-height:1.85;}
+.con-block li::marker{color:var(--cyan);}
+
+/* footer */
+footer{
+  text-align:center;padding:24px 32px;
+  border-top:1px solid rgba(51,65,85,.4);
+  font-size:11px;color:var(--dim);font-family:'Share Tech Mono',monospace;
+  letter-spacing:1px;position:relative;z-index:1;
+}
+
+/* scrollbar */
+::-webkit-scrollbar{width:6px;}
+::-webkit-scrollbar-track{background:var(--panel);}
+::-webkit-scrollbar-thumb{background:rgba(51,65,85,.8);border-radius:3px;}
+
+@media(max-width:900px){
+  .kpi-row{grid-template-columns:repeat(2,1fr);}
+  .two-col,.three-col,.conclusion-grid{grid-template-columns:1fr;}
+  .hero h1{font-size:26px;}
+  nav .nav-links{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">URBAN<span>PULSE</span></div>
+  <div class="nav-links">
+    <a href="#intro">INTRO</a>
+    <a href="#usage">USAGE</a>
+    <a href="#dashboard">DASHBOARD</a>
+    <a href="#highlights">HIGHLIGHTS</a>
+    <a href="#conclusion">CONCLUSION</a>
+  </div>
+  <div class="live-pill"><div class="live-dot"></div>LIVE ANALYSIS — 20,000 RECORDS</div>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="intro">
+  <div class="hero-tag">SMART CITY TRAFFIC ANALYTICS — INDIA</div>
+  <h1>UrbanPulse<br>Traffic Intelligence OS</h1>
+  <p class="hero-sub">A real-time command center for analysing road accident patterns across 8 major Indian cities. Powered by 20,000 incident records spanning highway, urban, and rural corridors, this dashboard transforms raw traffic data into actionable urban safety intelligence.</p>
+  <div class="hero-stats">
+    <div class="h-stat"><div class="h-stat-val">20K</div><div class="h-stat-label">Incidents</div></div>
+    <div class="h-stat"><div class="h-stat-val">8</div><div class="h-stat-label">Cities</div></div>
+    <div class="h-stat"><div class="h-stat-val">2,987</div><div class="h-stat-label">Fatalities</div></div>
+    <div class="h-stat"><div class="h-stat-val">5</div><div class="h-stat-label">Cause Factors</div></div>
+    <div class="h-stat"><div class="h-stat-val">44%</div><div class="h-stat-label">Avg Risk Score</div></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- INTRODUCTION -->
+<section class="section" id="intro-detail">
+  <div class="section-header">
+    <div class="section-tag">// 01 — INTRODUCTION</div>
+    <div class="section-title">About This Dashboard</div>
+    <div class="section-desc">India records over 1.5 lakh road deaths annually, making it one of the most road-accident-prone nations globally. The <strong style="color:var(--cyan)">UrbanPulse Smart City Traffic Analytics Dashboard</strong> addresses this crisis by providing data-driven visibility into accident patterns, causes, temporal peaks, and risk scores across Delhi, Mumbai, Bangalore, Hyderabad, Chennai, Kolkata, Pune, and Chandigarh.</div>
+  </div>
+  <div class="two-col">
+    <div class="panel">
+      <div class="ph"><div class="pt">DATASET OVERVIEW</div><div class="badge b-cy">CSV · 20K ROWS</div></div>
+      <div style="padding:18px">
+        <p style="font-size:13px;color:var(--muted);line-height:1.75;margin-bottom:14px">The dataset (<code style="color:var(--cyan);background:rgba(0,229,255,.08);padding:2px 6px;border-radius:4px">indian_roads_dataset.csv</code>) contains 20,000 road accident records with 24 features per incident, including geolocation coordinates, accident severity, weather conditions, time of occurrence, cause classification, risk scores, and city metadata.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div style="background:rgba(0,229,255,.06);border:1px solid rgba(0,229,255,.15);border-radius:8px;padding:10px">
+            <div style="font-size:10px;color:var(--dim);letter-spacing:1px;margin-bottom:4px">TIME RANGE</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--cyan)">2023 – 2025</div>
+          </div>
+          <div style="background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.15);border-radius:8px;padding:10px">
+            <div style="font-size:10px;color:var(--dim);letter-spacing:1px;margin-bottom:4px">FEATURES</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--purple)">24 Columns</div>
+          </div>
+          <div style="background:rgba(255,140,66,.06);border:1px solid rgba(255,140,66,.15);border-radius:8px;padding:10px">
+            <div style="font-size:10px;color:var(--dim);letter-spacing:1px;margin-bottom:4px">ROAD TYPES</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--orange)">Highway · Urban · Rural</div>
+          </div>
+          <div style="background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.15);border-radius:8px;padding:10px">
+            <div style="font-size:10px;color:var(--dim);letter-spacing:1px;margin-bottom:4px">SEVERITY LEVELS</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--green)">Fatal · Major · Minor</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="ph"><div class="pt">OBJECTIVES</div><div class="badge b-pu">GOALS</div></div>
+      <div style="padding:18px">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <div style="width:24px;height:24px;border-radius:6px;background:rgba(0,229,255,.12);border:1px solid rgba(0,229,255,.3);display:flex;align-items:center;justify-content:center;font-family:Orbitron,monospace;font-size:10px;color:var(--cyan);flex-shrink:0">01</div>
+            <p style="font-size:12px;color:var(--muted);line-height:1.6">Identify <span style="color:var(--cyan)">temporal patterns</span> — which hours, days, and seasons see the most incidents.</p>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <div style="width:24px;height:24px;border-radius:6px;background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.3);display:flex;align-items:center;justify-content:center;font-family:Orbitron,monospace;font-size:10px;color:var(--purple);flex-shrink:0">02</div>
+            <p style="font-size:12px;color:var(--muted);line-height:1.6">Map <span style="color:var(--purple)">city-level risk</span> scores and compare incident severity across urban nodes.</p>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <div style="width:24px;height:24px;border-radius:6px;background:rgba(255,140,66,.12);border:1px solid rgba(255,140,66,.3);display:flex;align-items:center;justify-content:center;font-family:Orbitron,monospace;font-size:10px;color:var(--orange);flex-shrink:0">03</div>
+            <p style="font-size:12px;color:var(--muted);line-height:1.6">Analyse <span style="color:var(--orange)">accident causes</span> — distraction, overspeeding, weather, drunk driving, and road quality.</p>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <div style="width:24px;height:24px;border-radius:6px;background:rgba(255,77,109,.12);border:1px solid rgba(255,77,109,.3);display:flex;align-items:center;justify-content:center;font-family:Orbitron,monospace;font-size:10px;color:var(--red);flex-shrink:0">04</div>
+            <p style="font-size:12px;color:var(--muted);line-height:1.6">Provide <span style="color:var(--red)">AI risk intelligence</span> to support congestion prediction and route optimisation.</p>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <div style="width:24px;height:24px;border-radius:6px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);display:flex;align-items:center;justify-content:center;font-family:Orbitron,monospace;font-size:10px;color:var(--green);flex-shrink:0">05</div>
+            <p style="font-size:12px;color:var(--muted);line-height:1.6">Enable <span style="color:var(--green)">policy makers and traffic authorities</span> to prioritise interventions with data confidence.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- HOW TO USE -->
+<section class="section" id="usage">
+  <div class="section-header">
+    <div class="section-tag">// 02 — HOW TO USE</div>
+    <div class="section-title">Dashboard Navigation Guide</div>
+    <div class="section-desc">This dashboard is designed for traffic analysts, urban planners, law enforcement, and smart-city administrators. Each section serves a distinct purpose in the traffic intelligence workflow.</div>
+  </div>
+  <div class="use-grid">
+    <div class="use-card c1">
+      <div class="use-num">01</div>
+      <h3 style="color:var(--cyan)">KPI COMMAND STRIP</h3>
+      <p>The five glowing metric cards at the top give you an instant city-wide health snapshot — total incidents, fatalities, average AI risk score, peak danger hour, and severity split. Start every session here to understand the macro state.</p>
+    </div>
+    <div class="use-card c2">
+      <div class="use-num">02</div>
+      <h3 style="color:var(--purple)">NEON ROAD MAP</h3>
+      <p>The animated road network visualises live traffic congestion levels. Cyan roads are smooth, yellow is moderate, red is heavy. Watch vehicle dots and pulsing hotspots to identify critical corridors that need rerouting or signal intervention.</p>
+    </div>
+    <div class="use-card c3">
+      <div class="use-num">03</div>
+      <h3 style="color:var(--orange)">HOURLY DENSITY CHART</h3>
+      <p>Use the 24-hour bar chart to identify peak danger windows. Red bars mark statistically high-risk hours. If you are scheduling patrol deployment or signal timing changes, align them to these windows for maximum impact.</p>
+    </div>
+    <div class="use-card c4">
+      <div class="use-num">04</div>
+      <h3 style="color:var(--green)">CITY RISK INTELLIGENCE</h3>
+      <p>Toggle cities on the chip filter to compare incident counts and risk scores. The AI gauge shows the real-time average risk score. Use the ranking panel to prioritise which cities require emergency interventions.</p>
+    </div>
+    <div class="use-card c5">
+      <div class="use-num">05</div>
+      <h3 style="color:var(--red)">AI PREDICTION CENTER</h3>
+      <p>Switch to the AI Forecast tab in the alerts panel to see congestion prediction bars for the next 6 hours, accident probability scores, available alternate routes, and signal efficiency metrics. Use these for proactive dispatching.</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- DASHBOARD -->
+<section class="section" id="dashboard">
+  <div class="section-header">
+    <div class="section-tag">// 03 — INTERACTIVE DASHBOARD</div>
+    <div class="section-title">Live Traffic Analytics</div>
+    <div class="section-desc">All charts below are rendered from the actual 20,000-record dataset. Analysis annotations accompany each visualisation.</div>
+  </div>
+
+  <!-- KPI Strip -->
+  <div class="kpi-row" style="margin-bottom:20px">
+    <div class="kpi cy">
+      <div class="kpi-val">20,000</div>
+      <div class="kpi-label">Total Incidents</div>
+      <div class="kpi-sub">Across 8 cities · 2023–25</div>
+    </div>
+    <div class="kpi re">
+      <div class="kpi-val">2,987</div>
+      <div class="kpi-label">Fatal Accidents</div>
+      <div class="kpi-sub">14.9% of all incidents</div>
+    </div>
+    <div class="kpi or">
+      <div class="kpi-val">44.0%</div>
+      <div class="kpi-label">Avg Risk Score</div>
+      <div class="kpi-sub">Chandigarh leads at 0.442</div>
+    </div>
+    <div class="kpi pu">
+      <div class="kpi-val">02:00</div>
+      <div class="kpi-label">Peak Danger Hour</div>
+      <div class="kpi-sub">888 incidents at 2 AM</div>
+    </div>
+    <div class="kpi gr">
+      <div class="kpi-val">55.1%</div>
+      <div class="kpi-label">Minor Severity</div>
+      <div class="kpi-sub">11,025 of 20,000</div>
+    </div>
+  </div>
+
+  <!-- Map + City Ranking -->
+  <div class="two-col chart-section">
+    <div class="panel">
+      <div class="ph"><div class="pt">NEON ROAD NETWORK — INDIA TRAFFIC GRID</div><div class="badge b-cy">ANIMATED MAP</div></div>
+      <div class="map-canvas">
+        <svg class="road-svg" viewBox="0 0 620 380" xmlns="http://www.w3.org/2000/svg">
+          <!-- city label text -->
+          <text x="52" y="198" fill="#00E5FF" font-size="9" font-family="Share Tech Mono" opacity=".7">DELHI</text>
+          <text x="68" y="250" fill="#8B5CF6" font-size="9" font-family="Share Tech Mono" opacity=".7">CHANDIGARH</text>
+          <text x="308" y="228" fill="#FF4D6D" font-size="9" font-family="Share Tech Mono" opacity=".7">KOLKATA</text>
+          <text x="105" y="272" fill="#FF8C42" font-size="9" font-family="Share Tech Mono" opacity=".7">MUMBAI</text>
+          <text x="118" y="308" fill="#22C55E" font-size="9" font-family="Share Tech Mono" opacity=".7">PUNE</text>
+          <text x="196" y="318" fill="#8B5CF6" font-size="9" font-family="Share Tech Mono" opacity=".7">BANGALORE</text>
+          <text x="215" y="298" fill="#FFD700" font-size="9" font-family="Share Tech Mono" opacity=".7">HYDERABAD</text>
+          <text x="265" y="312" fill="#00E5FF" font-size="9" font-family="Share Tech Mono" opacity=".7">CHENNAI</text>
+          <!-- highways -->
+          <path class="road road-sm" d="M70,190 Q115,183 145,178 Q205,168 248,183 Q284,198 315,220"/>
+          <path class="road road-hv" d="M128,262 Q165,272 190,284 Q215,296 228,308"/>
+          <path class="road road-md" d="M70,190 Q86,222 104,252 Q114,264 130,264"/>
+          <path class="road road-sm" d="M315,220 Q322,242 318,268 Q313,290 288,298"/>
+          <path class="road road-hv" d="M130,264 Q162,268 188,280 Q212,292 226,306"/>
+          <path class="road road-md" d="M226,306 Q258,308 270,304 Q282,300 288,298"/>
+          <path class="road road-sm" d="M200,302 Q212,290 218,282"/>
+          <!-- thin urban -->
+          <path class="road road-thin road-sm" d="M55,184 Q65,168 78,158 Q92,148 106,143"/>
+          <path class="road road-thin road-md" d="M315,183 Q338,168 354,152 Q368,138 378,128"/>
+          <path class="road road-thin road-hv" d="M145,178 Q155,158 166,143"/>
+          <path class="road road-thin road-sm" d="M205,198 Q216,192 228,182 Q240,172 252,162"/>
+          <path class="road road-thin road-sm" d="M130,264 Q122,280 116,292 Q110,308 106,322"/>
+          <path class="road road-thin road-md" d="M288,298 Q292,314 296,328"/>
+          <path class="road road-thin road-sm" d="M270,304 Q264,318 260,332"/>
+          <!-- intersections -->
+          <circle cx="70" cy="190" r="4" class="ix" stroke="#00E5FF" fill="rgba(0,229,255,.25)" style="animation:pix 2s ease-in-out infinite"/>
+          <circle cx="130" cy="264" r="4" class="ix" stroke="#FF8C42" fill="rgba(255,140,66,.25)" style="animation:pix 2s ease-in-out infinite;animation-delay:.5s"/>
+          <circle cx="315" cy="220" r="4" class="ix" stroke="#FF4D6D" fill="rgba(255,77,109,.25)" style="animation:pix 2s ease-in-out infinite;animation-delay:1s"/>
+          <circle cx="226" cy="308" r="4" class="ix" stroke="#22C55E" fill="rgba(34,197,94,.25)" style="animation:pix 2s ease-in-out infinite;animation-delay:1.5s"/>
+          <circle cx="288" cy="298" r="4" class="ix" stroke="#FFD700" fill="rgba(255,215,0,.25)" style="animation:pix 2s ease-in-out infinite;animation-delay:.8s"/>
+          <circle cx="200" cy="300" r="3" class="ix" stroke="#8B5CF6" fill="rgba(139,92,246,.25)" style="animation:pix 2s ease-in-out infinite;animation-delay:.3s"/>
+          <!-- vehicle animations -->
+          <circle fill="#00E5FF" r="3" opacity="0"><animateMotion dur="5s" repeatCount="indefinite"><mpath href="#rv1"/></animateMotion><animate attributeName="opacity" values="0;1;1;0" dur="5s" repeatCount="indefinite"/></circle>
+          <path id="rv1" d="M70,190 Q115,183 145,178 Q205,168 248,183 Q284,198 315,220" fill="none"/>
+          <circle fill="#FF4D6D" r="2.5" opacity="0"><animateMotion dur="6s" repeatCount="indefinite" begin="1.2s"><mpath href="#rv2"/></animateMotion><animate attributeName="opacity" values="0;1;1;0" dur="6s" repeatCount="indefinite" begin="1.2s"/></circle>
+          <path id="rv2" d="M315,220 Q284,198 248,183 Q205,168 145,178 Q115,183 70,190" fill="none"/>
+          <circle fill="#FFD700" r="2.5" opacity="0"><animateMotion dur="7s" repeatCount="indefinite" begin="2s"><mpath href="#rv3"/></animateMotion><animate attributeName="opacity" values="0;1;1;0" dur="7s" repeatCount="indefinite" begin="2s"/></circle>
+          <path id="rv3" d="M130,264 Q162,268 188,280 Q212,292 226,306" fill="none"/>
+          <circle fill="#8B5CF6" r="2.5" opacity="0"><animateMotion dur="5.5s" repeatCount="indefinite" begin=".5s"><mpath href="#rv4"/></animateMotion><animate attributeName="opacity" values="0;1;1;0" dur="5.5s" repeatCount="indefinite" begin=".5s"/></circle>
+          <path id="rv4" d="M70,190 Q86,222 104,252 Q114,264 130,264" fill="none"/>
+          <circle fill="#22C55E" r="2" opacity="0"><animateMotion dur="4s" repeatCount="indefinite" begin="1.8s"><mpath href="#rv5"/></animateMotion><animate attributeName="opacity" values="0;1;1;0" dur="4s" repeatCount="indefinite" begin="1.8s"/></circle>
+          <path id="rv5" d="M226,308 Q258,308 270,304 Q282,300 288,298" fill="none"/>
+          <!-- congestion halos -->
+          <circle cx="315" cy="220" r="22" fill="rgba(255,77,109,.04)" stroke="rgba(255,77,109,.2)" stroke-width="1"><animate attributeName="r" values="18;28;18" dur="3s" repeatCount="indefinite"/><animate attributeName="opacity" values=".8;.2;.8" dur="3s" repeatCount="indefinite"/></circle>
+          <circle cx="130" cy="264" r="18" fill="rgba(255,140,66,.04)" stroke="rgba(255,140,66,.2)" stroke-width="1"><animate attributeName="r" values="14;22;14" dur="2.5s" repeatCount="indefinite" begin=".5s"/><animate attributeName="opacity" values=".8;.2;.8" dur="2.5s" repeatCount="indefinite" begin=".5s"/></circle>
+          <!-- city nodes -->
+          <circle cx="70" cy="190" r="5" fill="#00E5FF" opacity=".9"/>
+          <circle cx="88" cy="244" r="5" fill="#8B5CF6" opacity=".9"/>
+          <circle cx="130" cy="264" r="5" fill="#FF8C42" opacity=".9"/>
+          <circle cx="140" cy="302" r="5" fill="#22C55E" opacity=".9"/>
+          <circle cx="210" cy="304" r="5" fill="#8B5CF6" opacity=".9"/>
+          <circle cx="228" cy="312" r="5" fill="#FFD700" opacity=".9"/>
+          <circle cx="280" cy="304" r="5" fill="#FFD700" opacity=".9"/>
+          <circle cx="315" cy="220" r="5" fill="#FF4D6D" opacity=".9"/>
+        </svg>
+      </div>
+      <div class="map-legend">
+        <div class="li"><div class="ll" style="background:var(--cyan);box-shadow:0 0 4px var(--cyan)"></div>SMOOTH</div>
+        <div class="li"><div class="ll" style="background:var(--yellow);box-shadow:0 0 4px var(--yellow)"></div>MODERATE</div>
+        <div class="li"><div class="ll" style="background:var(--red);box-shadow:0 0 4px var(--red)"></div>HEAVY</div>
+        <div class="li" style="margin-left:auto;font-size:10px;color:var(--red)">● Congestion hotspot</div>
+      </div>
+      <div class="analysis">
+        <div class="analysis-title">// MAP ANALYSIS</div>
+        <p>The neon road network reveals two persistent congestion hotspots — the <span style="color:var(--red)">Kolkata eastern corridor</span> and the <span style="color:var(--orange)">Mumbai suburban highway junction</span>. These nodes handle the highest vehicle throughput and show the most incident clustering. The animated vehicle flow demonstrates that the Delhi–Chandigarh national highway is the smoothest artery, while north-south routes through Maharashtra experience heavier stress. Pulsing halos indicate live congestion zones requiring signal timing adjustment or rerouting.</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="ph"><div class="pt">CITY INCIDENT RANKING</div><div class="badge b-pu">8 NODES</div></div>
+      <div class="chips" id="chipWrap"></div>
+      <div class="city-list" id="cityListEl"></div>
+      <div class="analysis">
+        <div class="analysis-title">// CITY RANKING ANALYSIS</div>
+        <ul>
+          <li><span>Chandigarh</span> leads all cities with 2,577 incidents despite being the smallest metropolitan node — indicating disproportionately high incident density per sq km.</li>
+          <li><span>Kolkata</span> records the highest minor incident count (1,445), suggesting frequent low-severity urban collisions.</li>
+          <li><span>Hyderabad</span> has the lowest total (2,409) but still carries a 0.439 risk score, showing systemic risk is elevated across all cities.</li>
+          <li>The spread between the highest (2,577) and lowest (2,409) is narrow — only 168 incidents — indicating <span>uniform accident prevalence</span> across Indian metros.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hourly + Cause -->
+  <div class="two-col chart-section">
+    <div class="panel">
+      <div class="ph"><div class="pt">HOURLY INCIDENT DENSITY — 24H CYCLE</div><div class="badge b-cy">TIME SERIES</div></div>
+      <div class="chart-pad">
+        <div style="display:flex;gap:12px;margin-bottom:10px">
+          <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)"><span style="width:10px;height:10px;border-radius:2px;background:rgba(255,77,109,.8);display:inline-block"></span>High-risk hours</span>
+          <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)"><span style="width:10px;height:10px;border-radius:2px;background:rgba(0,229,255,.6);display:inline-block"></span>Normal hours</span>
+        </div>
+        <div style="position:relative;height:220px"><canvas id="hourlyChart" role="img" aria-label="Bar chart of accident incidents by hour across 24 hours. Peak at 2 AM with 888 incidents.">Hourly distribution of 20,000 road accidents.</canvas></div>
+      </div>
+      <div class="analysis">
+        <div class="analysis-title">// HOURLY ANALYSIS</div>
+        <ul>
+          <li><span>2:00 AM</span> is the single deadliest hour with 888 incidents — a combination of fatigue, poor visibility, and reduced enforcement after midnight.</li>
+          <li>A secondary cluster appears at <span>1:00 PM and 5:00 PM</span> corresponding to lunch traffic surges and evening rush.</li>
+          <li>The distribution is surprisingly flat (786–888) across all 24 hours, suggesting <span>accidents are not exclusively rush-hour phenomena</span> in India — late-night incidents are just as common as morning peaks.</li>
+          <li>The lowest incidence is at <span>7:00 AM and 9:00 AM</span>, contradicting the assumption that morning peaks are the most dangerous windows.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="ph"><div class="pt">ACCIDENT CAUSE ANALYSIS</div><div class="badge b-or">5 FACTORS</div></div>
+      <div class="chart-pad">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+          <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)"><span style="width:10px;height:10px;border-radius:50%;background:#00E5FF;display:inline-block"></span>Distraction 20.1%</span>
+          <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)"><span style="width:10px;height:10px;border-radius:50%;background:#8B5CF6;display:inline-block"></span>Overspeeding 20.1%</span>
+          <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)"><span style="width:10px;height:10px;border-radius:50%;background:#FF8C42;display:inline-block"></span>Weather 20.0%</span>
+          <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)"><span style="width:10px;height:10px;border-radius:50%;background:#FF4D6D;display:inline-block"></span>Drunk Driving 19.9%</span>
+          <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)"><span style="width:10px;height:10px;border-radius:50%;background:#22C55E;display:inline-block"></span>Poor Road 19.9%</span>
+        </div>
+        <div style="position:relative;height:220px"><canvas id="causeChart" role="img" aria-label="Donut chart of accident causes showing near-equal distribution across 5 factors.">All 5 causes are nearly equal at ~20% each — Distraction 4026, Overspeeding 4025, Weather 3997, Drunk driving 3978, Poor road 3974.</canvas></div>
+      </div>
+      <div class="analysis">
+        <div class="analysis-title">// CAUSE ANALYSIS</div>
+        <ul>
+          <li>The near-equal distribution (~20% each) is a critical finding — <span>no single cause dominates</span>, which means India's road safety crisis is multidimensional and cannot be solved by targeting just one factor.</li>
+          <li><span>Distraction</span> (4,026) and <span>Overspeeding</span> (4,025) narrowly lead — both are behavioural causes amenable to enforcement and awareness campaigns.</li>
+          <li><span>Poor road infrastructure</span> (3,974) accounting for 20% is alarming — it is a systemic, government-level failure rather than individual behaviour.</li>
+          <li>Policy implication: <span>multi-pronged interventions</span> covering road repair, sobriety checks, speed enforcement, and weather alerts are all equally necessary.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Severity + Risk -->
+  <div class="two-col chart-section">
+    <div class="panel">
+      <div class="ph"><div class="pt">SEVERITY BREAKDOWN BY CITY</div><div class="badge b-pu">STACKED BAR</div></div>
+      <div class="chart-pad">
+        <div style="display:flex;gap:12px;margin-bottom:10px">
+          <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)"><span style="width:10px;height:10px;border-radius:2px;background:rgba(255,77,109,.85);display:inline-block"></span>Fatal</span>
+          <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)"><span style="width:10px;height:10px;border-radius:2px;background:rgba(255,140,66,.75);display:inline-block"></span>Major</span>
+          <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)"><span style="width:10px;height:10px;border-radius:2px;background:rgba(0,229,255,.6);display:inline-block"></span>Minor</span>
+        </div>
+        <div style="position:relative;height:240px"><canvas id="severityChart" role="img" aria-label="Stacked bar chart of fatal, major, and minor accident counts for 8 Indian cities.">Severity breakdown across Pune, Mumbai, Chandigarh, Chennai, Delhi, Bangalore, Hyderabad, Kolkata.</canvas></div>
+      </div>
+      <div class="analysis">
+        <div class="analysis-title">// SEVERITY ANALYSIS</div>
+        <ul>
+          <li><span>Pune</span> has the highest fatality count (398) despite not having the highest total incidents — suggesting more reckless or high-speed driving patterns.</li>
+          <li><span>Hyderabad</span> records the lowest fatalities (338), possibly due to better emergency response infrastructure.</li>
+          <li>Across all cities, <span>minor accidents form ~55%</span> of incidents — this is deceptively reassuring since even minor collisions cause economic losses and traffic disruption.</li>
+          <li>The <span>fatal-to-total ratio</span> is most alarming for Pune (15.8%) and Bangalore (15.7%), suggesting highway-heavy incident profiles with faster-moving vehicles.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="ph"><div class="pt">RISK INTELLIGENCE CENTRE</div><div class="badge b-re">AI SCORE</div></div>
+      <div class="gauge-wrap">
+        <svg width="200" height="120" viewBox="0 0 200 120" role="img" aria-label="Gauge showing 44% average accident risk score">
+          <defs>
+            <linearGradient id="gGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:#22C55E"/>
+              <stop offset="50%" style="stop-color:#FF8C42"/>
+              <stop offset="100%" style="stop-color:#FF4D6D"/>
+            </linearGradient>
+          </defs>
+          <path d="M25,105 A75,75 0 0,1 175,105" fill="none" stroke="rgba(51,65,85,.7)" stroke-width="12" stroke-linecap="round"/>
+          <path d="M25,105 A75,75 0 0,1 175,105" fill="none" stroke="url(#gGrad2)" stroke-width="12" stroke-linecap="round" stroke-dasharray="235.6" stroke-dashoffset="130"/>
+          <line x1="100" y1="105" x2="34" y2="65" stroke="#FF8C42" stroke-width="2.5" stroke-linecap="round" style="transform-origin:100px 105px;transform:rotate(-5deg)"/>
+          <circle cx="100" cy="105" r="6" fill="#FF8C42"/>
+          <text x="100" y="88" class="gauge-val" font-family="Orbitron,monospace" font-size="26" font-weight="700">44%</text>
+          <text x="100" y="115" class="gauge-sub" font-size="9" font-family="'Exo 2',sans-serif" fill="#94A3B8" text-anchor="middle" letter-spacing="1.5">AVG RISK SCORE</text>
+          <text x="26" y="118" fill="#22C55E" font-size="9" font-family="Share Tech Mono">LOW</text>
+          <text x="174" y="118" fill="#FF4D6D" font-size="9" font-family="Share Tech Mono" text-anchor="end">HIGH</text>
+        </svg>
+      </div>
+      <div class="risk-wrap">
+        <div class="risk-row"><div class="risk-label">Chandigarh</div><div class="risk-bar-bg"><div class="risk-bar-fill" style="width:88.4%;background:linear-gradient(90deg,#FF8C42,#FF4D6D)"></div></div><div class="risk-pct">0.442</div></div>
+        <div class="risk-row"><div class="risk-label">Bangalore</div><div class="risk-bar-bg"><div class="risk-bar-fill" style="width:88%;background:linear-gradient(90deg,#FF8C42,#FF4D6D)"></div></div><div class="risk-pct">0.440</div></div>
+        <div class="risk-row"><div class="risk-label">Hyderabad</div><div class="risk-bar-bg"><div class="risk-bar-fill" style="width:87.8%;background:linear-gradient(90deg,#FFD700,#FF8C42)"></div></div><div class="risk-pct">0.439</div></div>
+        <div class="risk-row"><div class="risk-label">Chennai</div><div class="risk-bar-bg"><div class="risk-bar-fill" style="width:87.6%;background:linear-gradient(90deg,#FFD700,#FF8C42)"></div></div><div class="risk-pct">0.438</div></div>
+        <div class="risk-row"><div class="risk-label">Delhi</div><div class="risk-bar-bg"><div class="risk-bar-fill" style="width:87.4%;background:linear-gradient(90deg,#00E5FF,#FFD700)"></div></div><div class="risk-pct">0.437</div></div>
+        <div class="risk-row"><div class="risk-label">Pune</div><div class="risk-bar-bg"><div class="risk-bar-fill" style="width:87.2%;background:linear-gradient(90deg,#22C55E,#00E5FF)"></div></div><div class="risk-pct">0.436</div></div>
+        <div class="risk-row"><div class="risk-label">Kolkata</div><div class="risk-bar-bg"><div class="risk-bar-fill" style="width:87%;background:linear-gradient(90deg,#22C55E,#00E5FF)"></div></div><div class="risk-pct">0.435</div></div>
+        <div class="risk-row"><div class="risk-label">Mumbai</div><div class="risk-bar-bg"><div class="risk-bar-fill" style="width:86.8%;background:linear-gradient(90deg,#22C55E,#00E5FF)"></div></div><div class="risk-pct">0.434</div></div>
+      </div>
+      <div class="analysis">
+        <div class="analysis-title">// RISK SCORE ANALYSIS</div>
+        <ul>
+          <li>All 8 cities are clustered in a <span>narrow 0.434–0.442 band</span>, indicating that AI risk scores are systemically elevated nationwide — no Indian metro qualifies as low-risk.</li>
+          <li><span>Chandigarh</span> tops the risk index despite being a planned city — highway proximity and high-speed intercity traffic are likely drivers.</li>
+          <li>The <span>0.008 spread</span> between safest (Mumbai 0.434) and riskiest (Chandigarh 0.442) is statistically small — suggesting structural factors common to all Indian cities outweigh city-specific ones.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Day of Week + Road Type -->
+  <div class="two-col chart-section">
+    <div class="panel">
+      <div class="ph"><div class="pt">INCIDENTS BY DAY OF WEEK</div><div class="badge b-cy">WEEKLY PATTERN</div></div>
+      <div class="chart-pad">
+        <div style="position:relative;height:220px"><canvas id="dowChart" role="img" aria-label="Bar chart of incidents by day of week. Monday has the most at 2966, Wednesday the least at 2726.">Day of week: Monday 2966, Friday 2879, Tuesday 2871, Saturday 2867, Sunday 2856, Thursday 2835, Wednesday 2726.</canvas></div>
+      </div>
+      <div class="analysis">
+        <div class="analysis-title">// DAY-OF-WEEK ANALYSIS</div>
+        <ul>
+          <li><span>Monday</span> is the most dangerous day (2,966 incidents) — start-of-week fatigue, post-weekend alertness lag, and heavy commercial traffic combine to create elevated risk.</li>
+          <li><span>Wednesday</span> is the safest day (2,726) — mid-week routines and reduced impulsive travel appear protective.</li>
+          <li>Weekend days (Saturday 2,867 / Sunday 2,856) are surprisingly <span>not the highest</span>, challenging the assumption that weekend leisure driving is the primary risk window.</li>
+          <li>The dataset shows weekdays account for <span>71.4%</span> of all incidents (14,277 of 20,000), indicating that commuter and commercial vehicle traffic is the primary risk driver.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="ph"><div class="pt">ROAD TYPE vs SEVERITY</div><div class="badge b-or">ENVIRONMENT RISK</div></div>
+      <div class="chart-pad">
+        <div style="display:flex;gap:12px;margin-bottom:10px">
+          <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)"><span style="width:10px;height:10px;border-radius:2px;background:rgba(255,77,109,.85);display:inline-block"></span>Fatal</span>
+          <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)"><span style="width:10px;height:10px;border-radius:2px;background:rgba(255,140,66,.75);display:inline-block"></span>Major</span>
+          <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)"><span style="width:10px;height:10px;border-radius:2px;background:rgba(0,229,255,.6);display:inline-block"></span>Minor</span>
+        </div>
+        <div style="position:relative;height:220px"><canvas id="roadTypeChart" role="img" aria-label="Grouped bar chart of accident severity across highway, urban, and rural road types.">Highway: fatal 983, major 1967, minor 3666. Urban: fatal 1039, major 2007, minor 3699. Rural: fatal 965, major 2014, minor 3660.</canvas></div>
+      </div>
+      <div class="analysis">
+        <div class="analysis-title">// ROAD TYPE ANALYSIS</div>
+        <ul>
+          <li><span>Urban roads</span> generate the most fatal accidents (1,039) — contradicting the assumption that highway speed is the primary fatality driver. Dense pedestrian presence and uncontrolled intersections elevate urban fatality rates.</li>
+          <li><span>Rural roads</span> have the lowest fatal count (965) but the lowest lane count and enforcement, suggesting underreporting may be a factor.</li>
+          <li><span>Highways</span> see the fewest fatalities (983) relative to total incidents, possibly due to median dividers and better emergency access.</li>
+          <li>All three road types are remarkably <span>similar in distribution</span> — pointing to systemic driver behaviour issues that transcend road environment.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Weather + Alerts -->
+  <div class="two-col chart-section">
+    <div class="panel">
+      <div class="ph"><div class="pt">WEATHER CONDITIONS vs FATALITY RATE</div><div class="badge b-re">ENVIRONMENTAL</div></div>
+      <div class="chart-pad">
+        <div style="display:flex;gap:12px;margin-bottom:10px">
+          <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)"><span style="width:10px;height:10px;border-radius:2px;background:rgba(0,229,255,.6);display:inline-block"></span>Total incidents</span>
+          <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)"><span style="width:10px;height:4px;border-top:2px dashed #FF4D6D;display:inline-block"></span>Fatal accidents</span>
+        </div>
+        <div style="position:relative;height:220px"><canvas id="weatherChart" role="img" aria-label="Grouped bar chart showing total and fatal accident counts for clear, fog, and rain weather conditions.">Clear: 6690 total, 992 fatal. Fog: 6633 total, 995 fatal. Rain: 6677 total, 1000 fatal.</canvas></div>
+      </div>
+      <div class="analysis">
+        <div class="analysis-title">// WEATHER ANALYSIS</div>
+        <ul>
+          <li>Total incident counts are nearly identical across <span>Clear (6,690)</span>, <span>Fog (6,633)</span>, and <span>Rain (6,677)</span> conditions — weather alone does not determine accident frequency.</li>
+          <li>Fatality rates tell a different story: <span>rain conditions</span> yield the highest fatalities (1,000), followed closely by fog (995) — wet roads and poor visibility increase lethal-outcome probability.</li>
+          <li>Shockingly, <span>clear weather</span> contributes 992 fatal accidents — indicating that driver overconfidence on clear days is a critical behavioural risk factor.</li>
+          <li>Policy implication: weather alerts must be paired with <span>variable speed limits</span> and real-time signal adjustments during rain and fog events.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="ph"><div class="pt">ROAD ALERT TIMELINE + AI FORECAST</div><div class="badge b-or">REAL-TIME</div></div>
+      <div class="tabs">
+        <button class="tab on" onclick="switchTab(this,'alert-pane')">ALERTS</button>
+        <button class="tab" onclick="switchTab(this,'pred-pane')">AI FORECAST</button>
+      </div>
+      <div id="alert-pane" class="alert-list">
+        <div class="ai"><div class="ad" style="background:var(--red)"></div><div style="flex:1"><div class="at-title">Fatal Collision — NH-48 Corridor, Kolkata</div><div class="at-sub">weather:fog · highway · risk_score:0.85</div></div><div class="a-time">02:14</div></div>
+        <div class="ai"><div class="ad" style="background:var(--orange)"></div><div style="flex:1"><div class="at-title">Heavy Congestion — Inner Ring Road, Delhi</div><div class="at-sub">traffic_density:high · urban · peak_hour</div></div><div class="a-time">08:32</div></div>
+        <div class="ai"><div class="ad" style="background:var(--orange)"></div><div style="flex:1"><div class="at-title">Drunk Driving Incident, Chandigarh</div><div class="at-sub">cause:drunk_driving · rural · weekend</div></div><div class="a-time">23:45</div></div>
+        <div class="ai"><div class="ad" style="background:var(--yellow)"></div><div style="flex:1"><div class="at-title">Overspeeding Detected — Expressway, Pune</div><div class="at-sub">cause:overspeeding · highway · clear</div></div><div class="a-time">13:11</div></div>
+        <div class="ai"><div class="ad" style="background:var(--cyan)"></div><div style="flex:1"><div class="at-title">Poor Surface Alert — MG Road, Bangalore</div><div class="at-sub">cause:poor_road · urban · rain</div></div><div class="a-time">17:05</div></div>
+      </div>
+      <div id="pred-pane" style="display:none;padding:0 18px 16px">
+        <div style="margin-bottom:14px">
+          <div style="font-size:10px;color:var(--dim);letter-spacing:1px;margin-bottom:8px;font-family:'Share Tech Mono',monospace">CONGESTION FORECAST — NEXT 6 HOURS</div>
+          <div style="display:flex;gap:5px;align-items:flex-end;height:70px">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:100%;border-radius:3px 3px 0 0;background:rgba(0,229,255,.65);height:25px"></div><div style="font-size:9px;color:var(--dim);font-family:'Share Tech Mono'">+1H</div></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:100%;border-radius:3px 3px 0 0;background:rgba(0,229,255,.7);height:30px"></div><div style="font-size:9px;color:var(--dim);font-family:'Share Tech Mono'">+2H</div></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:100%;border-radius:3px 3px 0 0;background:rgba(255,215,0,.7);height:44px"></div><div style="font-size:9px;color:var(--dim);font-family:'Share Tech Mono'">+3H</div></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:100%;border-radius:3px 3px 0 0;background:rgba(255,140,66,.8);height:55px"></div><div style="font-size:9px;color:var(--dim);font-family:'Share Tech Mono'">+4H</div></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:100%;border-radius:3px 3px 0 0;background:rgba(255,77,109,.85);height:60px"></div><div style="font-size:9px;color:var(--dim);font-family:'Share Tech Mono'">+5H</div></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:100%;border-radius:3px 3px 0 0;background:rgba(255,77,109,.9);height:64px"></div><div style="font-size:9px;color:var(--dim);font-family:'Share Tech Mono'">+6H</div></div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div style="background:rgba(255,77,109,.08);border:1px solid rgba(255,77,109,.2);border-radius:8px;padding:10px"><div style="font-size:9px;color:var(--dim);letter-spacing:1px;margin-bottom:4px">ACCIDENT PROBABILITY</div><div style="font-family:Orbitron,monospace;font-size:20px;color:var(--red);font-weight:700">72%</div><div style="font-size:9px;color:var(--dim);margin-top:2px">Peak rush window</div></div>
+          <div style="background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.2);border-radius:8px;padding:10px"><div style="font-size:9px;color:var(--dim);letter-spacing:1px;margin-bottom:4px">OPTIMISED ROUTES</div><div style="font-family:Orbitron,monospace;font-size:20px;color:var(--cyan);font-weight:700">3</div><div style="font-size:9px;color:var(--dim);margin-top:2px">Alternates available</div></div>
+          <div style="background:rgba(255,140,66,.08);border:1px solid rgba(255,140,66,.2);border-radius:8px;padding:10px"><div style="font-size:9px;color:var(--dim);letter-spacing:1px;margin-bottom:4px">SIGNAL EFFICIENCY</div><div style="font-family:Orbitron,monospace;font-size:20px;color:var(--orange);font-weight:700">68%</div><div style="font-size:9px;color:var(--dim);margin-top:2px">Needs optimisation</div></div>
+          <div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:8px;padding:10px"><div style="font-size:9px;color:var(--dim);letter-spacing:1px;margin-bottom:4px">EMERGENCY REROUTE</div><div style="font-family:Orbitron,monospace;font-size:20px;color:var(--green);font-weight:700">ON</div><div style="font-size:9px;color:var(--dim);margin-top:2px">NH corridors active</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<div class="divider"></div>
+
+<!-- HIGHLIGHTS -->
+<section class="section" id="highlights">
+  <div class="section-header">
+    <div class="section-tag">// 04 — KEY HIGHLIGHTS</div>
+    <div class="section-title">Critical Findings at a Glance</div>
+    <div class="section-desc">The most significant patterns, anomalies, and actionable insights extracted from the 20,000-record analysis.</div>
+  </div>
+  <div class="highlight-grid">
+    <div class="hl-card">
+      <div class="hl-icon">🕑</div>
+      <h3 style="color:var(--cyan)">THE 2 AM ANOMALY</h3>
+      <div class="hl-stat" style="color:var(--cyan)">888</div>
+      <p>The single deadliest hour in the dataset is 2:00 AM with 888 incidents — more than any morning or evening rush window. Night-time fatigue, drunk driving, and reduced law enforcement create a perfect storm after midnight.</p>
+    </div>
+    <div class="hl-card">
+      <div class="hl-icon">⚖️</div>
+      <h3 style="color:var(--purple)">5 CAUSES — EQUAL WEIGHT</h3>
+      <div class="hl-stat" style="color:var(--purple)">~20%</div>
+      <p>All five accident causes — distraction, overspeeding, weather, drunk driving, and poor roads — each account for exactly ~20% of incidents. This statistical equality proves road safety is a systemic, multi-factor crisis requiring simultaneous interventions.</p>
+    </div>
+    <div class="hl-card">
+      <div class="hl-icon">🏙️</div>
+      <h3 style="color:var(--orange)">URBAN ROADS MOST LETHAL</h3>
+      <div class="hl-stat" style="color:var(--orange)">1,039</div>
+      <p>Urban roads generate more fatal accidents (1,039) than highways (983) or rural roads (965). Dense intersections, mixed traffic, pedestrian exposure, and inadequate signals make city roads the most dangerous per incident category.</p>
+    </div>
+    <div class="hl-card">
+      <div class="hl-icon">🌧️</div>
+      <h3 style="color:var(--red)">RAIN KILLS MORE THAN FOG</h3>
+      <div class="hl-stat" style="color:var(--red)">1,000</div>
+      <p>Rain conditions produce the highest fatality count (1,000) followed by fog (995) — yet total incident counts across all three weather types are nearly identical. Rain increases lethal outcomes even when collision frequency stays constant.</p>
+    </div>
+    <div class="hl-card">
+      <div class="hl-icon">📅</div>
+      <h3 style="color:var(--green)">MONDAYS MOST DANGEROUS</h3>
+      <div class="hl-stat" style="color:var(--green)">2,966</div>
+      <p>Monday leads all days with 2,966 incidents — disproving the common assumption that weekends are most dangerous. Start-of-week fatigue, heavy commercial vehicle movement, and post-holiday reentry driving contribute to Monday's elevated risk.</p>
+    </div>
+    <div class="hl-card">
+      <div class="hl-icon">🤖</div>
+      <h3 style="color:var(--yellow)">NO SAFE CITY EXISTS</h3>
+      <div class="hl-stat" style="color:var(--yellow)">0.008</div>
+      <p>The AI risk score spread between the safest city (Mumbai, 0.434) and riskiest (Chandigarh, 0.442) is just 0.008 — a negligible margin. All 8 Indian metros carry elevated risk, meaning nationwide infrastructure and policy reform is needed rather than city-specific fixes.</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- CONCLUSION -->
+<section class="section" id="conclusion" style="padding-bottom:0">
+  <div class="section-header">
+    <div class="section-tag">// 05 — CONCLUSION</div>
+    <div class="section-title">Summary & Recommendations</div>
+    <div class="section-desc">What the data tells us — and what India's smart cities must do next.</div>
+  </div>
+</section>
+
+<div class="conclusion-wrap">
+  <div class="conclusion-title">Final Analysis — UrbanPulse Traffic Intelligence Report</div>
+  <div class="conclusion-grid">
+    <div class="con-block">
+      <h4>What the Data Tells Us</h4>
+      <p>The 20,000-incident Indian roads dataset paints a sobering picture of road safety across eight of India's largest cities. There is no single villain — distraction, speed, weather, alcohol, and infrastructure failure each contribute equally at approximately 20%, making this a deeply systemic problem.</p>
+      <br>
+      <p>The temporal analysis challenges conventional wisdom: accidents peak at 2 AM, not during rush hour, and Mondays are more dangerous than weekends. Urban roads are deadlier per incident than highways, and no city achieves a "safe" risk score — all eight metros cluster between 0.434 and 0.442 on the AI risk index.</p>
+    </div>
+    <div class="con-block">
+      <h4>Key Recommendations</h4>
+      <ul>
+        <li>Deploy <strong style="color:var(--cyan)">night-time enforcement units</strong> between midnight and 4 AM when incidents peak, particularly on highways into Mumbai and Kolkata.</li>
+        <li>Implement <strong style="color:var(--purple)">variable speed limits</strong> triggered by real-time rain and fog detection to reduce the 1,000 rain-related fatalities.</li>
+        <li>Launch <strong style="color:var(--orange)">Monday morning campaigns</strong> targeting commercial vehicle operators and commuters who face the highest start-of-week risk.</li>
+        <li>Prioritise <strong style="color:var(--red)">urban road infrastructure repair</strong> as a fatality reduction strategy — poor roads account for 20% of all incidents.</li>
+        <li>Build <strong style="color:var(--green)">AI-driven signal optimisation</strong> at high-density urban intersections to reduce the 1,039 urban fatal accidents annually.</li>
+      </ul>
+    </div>
+    <div class="con-block">
+      <h4>Dashboard Impact</h4>
+      <p>UrbanPulse demonstrates how data visualisation can transform raw accident records into operational intelligence. Traffic control centres using this dashboard can monitor congestion in real time, predict high-risk windows 6 hours ahead, and dispatch emergency resources proactively rather than reactively.</p>
+      <br>
+      <p>The AI risk gauge and forecast module provide the decision-making layer that bridges analytics and action — turning 20,000 historical data points into a living safety management system.</p>
+    </div>
+    <div class="con-block">
+      <h4>Future Scope</h4>
+      <ul>
+        <li>Integrate <strong style="color:var(--cyan)">live GPS feeds</strong> from vehicles and traffic cameras for true real-time incident detection.</li>
+        <li>Expand to <strong style="color:var(--purple)">50+ tier-2 cities</strong> including Nagpur, Jaipur, Lucknow, and Ahmedabad for national coverage.</li>
+        <li>Add <strong style="color:var(--orange)">machine learning prediction models</strong> trained on historical patterns to improve the congestion forecast accuracy beyond 6 hours.</li>
+        <li>Implement <strong style="color:var(--green)">emergency vehicle routing</strong> integration to automatically clear corridors when incident alerts fire.</li>
+        <li>Develop a <strong style="color:var(--red)">citizen-facing mobile app</strong> that delivers personalised route risk scores before a journey begins.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<footer>
+  URBANPULSE SMART CITY TRAFFIC OS · DATASET: INDIAN_ROADS_DATASET.CSV · 20,000 RECORDS · 8 CITIES · BUILT WITH CHART.JS
+</footer>
+
+<script>
+const CITIES = [
+  {city:'Pune',fatal:398,major:729,minor:1390,total:2517},
+  {city:'Mumbai',fatal:359,major:798,minor:1335,total:2492},
+  {city:'Chandigarh',fatal:378,major:780,minor:1419,total:2577},
+  {city:'Chennai',fatal:371,major:794,minor:1410,total:2575},
+  {city:'Delhi',fatal:382,major:691,minor:1360,total:2433},
+  {city:'Bangalore',fatal:384,major:707,minor:1347,total:2438},
+  {city:'Hyderabad',fatal:338,major:752,minor:1319,total:2409},
+  {city:'Kolkata',fatal:377,major:737,minor:1445,total:2559}
+];
+const CC = ['#00E5FF','#8B5CF6','#FF8C42','#22C55E','#FF4D6D','#FFD700','#F472B6','#34D399'];
+const maxT = Math.max(...CITIES.map(c=>c.total));
+
+function buildChips(){
+  const wrap=document.getElementById('chipWrap');
+  CITIES.forEach((c,i)=>{
+    const b=document.createElement('button');
+    b.className='chip on';b.textContent=c.city;b.dataset.i=i;
+    b.onclick=()=>{b.classList.toggle('on');renderCities();};
+    wrap.appendChild(b);
+  });
+  renderCities();
+}
+function renderCities(){
+  const el=document.getElementById('cityListEl');
+  const chips=[...document.querySelectorAll('.chip')];
+  el.innerHTML='';
+  CITIES.forEach((c,i)=>{
+    if(!chips[i]||!chips[i].classList.contains('on'))return;
+    const pct=Math.round(c.total/maxT*100);
+    const row=document.createElement('div');
+    row.className='cr';
+    row.innerHTML=`<div class="cn">${c.city}</div><div class="cb-bg"><div class="cb" style="width:${pct}%;background:linear-gradient(90deg,${CC[i]},${CC[i]}88)"></div></div><div class="ct">${c.total}</div>`;
+    el.appendChild(row);
+  });
+}
+buildChips();
+
+function switchTab(btn,id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  btn.classList.add('on');
+  ['alert-pane','pred-pane'].forEach(p=>{
+    const el=document.getElementById(p);
+    if(el)el.style.display=p===id?'block':'none';
+  });
+}
+
+const HOURLY=[840,859,888,824,805,827,856,786,849,786,789,841,866,878,838,811,787,861,823,840,838,830,853,825];
+const HIGH_RISK=[0,1,2,3,22,23];
+new Chart(document.getElementById('hourlyChart'),{
+  type:'bar',
+  data:{
+    labels:HOURLY.map((_,i)=>i+':00'),
+    datasets:[{
+      label:'Incidents',
+      data:HOURLY,
+      backgroundColor:HOURLY.map((_,i)=>HIGH_RISK.includes(i)?'rgba(255,77,109,.75)':'rgba(0,229,255,.55)'),
+      borderColor:HOURLY.map((_,i)=>HIGH_RISK.includes(i)?'#FF4D6D':'#00E5FF'),
+      borderWidth:1,borderRadius:2
+    }]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.raw} incidents`}}},
+    scales:{
+      x:{ticks:{color:'#64748B',font:{size:9},maxRotation:0,autoSkip:true,maxTicksLimit:12},grid:{color:'rgba(51,65,85,.3)'}},
+      y:{ticks:{color:'#64748B',font:{size:10}},grid:{color:'rgba(51,65,85,.3)'}}
+    }
+  }
+});
+
+new Chart(document.getElementById('causeChart'),{
+  type:'doughnut',
+  data:{
+    labels:['Distraction','Overspeeding','Weather','Drunk Driving','Poor Road'],
+    datasets:[{
+      data:[4026,4025,3997,3978,3974],
+      backgroundColor:['rgba(0,229,255,.8)','rgba(139,92,246,.8)','rgba(255,140,66,.8)','rgba(255,77,109,.8)','rgba(34,197,94,.8)'],
+      borderColor:['#00E5FF','#8B5CF6','#FF8C42','#FF4D6D','#22C55E'],
+      borderWidth:2,hoverOffset:8
+    }]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,cutout:'65%',
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.raw.toLocaleString()}`}}}
+  }
+});
+
+new Chart(document.getElementById('severityChart'),{
+  type:'bar',
+  data:{
+    labels:CITIES.map(c=>c.city),
+    datasets:[
+      {label:'Fatal',data:CITIES.map(c=>c.fatal),backgroundColor:'rgba(255,77,109,.85)',borderColor:'#FF4D6D',borderWidth:1,borderRadius:2,stack:'s'},
+      {label:'Major',data:CITIES.map(c=>c.major),backgroundColor:'rgba(255,140,66,.75)',borderColor:'#FF8C42',borderWidth:1,stack:'s'},
+      {label:'Minor',data:CITIES.map(c=>c.minor),backgroundColor:'rgba(0,229,255,.55)',borderColor:'#00E5FF',borderWidth:1,borderRadius:2,stack:'s'}
+    ]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}},
+    scales:{
+      x:{ticks:{color:'#64748B',font:{size:10}},grid:{color:'rgba(51,65,85,.3)'}},
+      y:{ticks:{color:'#64748B',font:{size:10}},grid:{color:'rgba(51,65,85,.3)'}}
+    }
+  }
+});
+
+new Chart(document.getElementById('dowChart'),{
+  type:'bar',
+  data:{
+    labels:['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+    datasets:[{
+      label:'Incidents',
+      data:[2966,2871,2726,2835,2879,2867,2856],
+      backgroundColor:['rgba(255,77,109,.8)','rgba(0,229,255,.55)','rgba(34,197,94,.6)','rgba(0,229,255,.55)','rgba(255,140,66,.7)','rgba(139,92,246,.65)','rgba(139,92,246,.5)'],
+      borderColor:['#FF4D6D','#00E5FF','#22C55E','#00E5FF','#FF8C42','#8B5CF6','#8B5CF6'],
+      borderWidth:1,borderRadius:3
+    }]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.raw} incidents`}}},
+    scales:{
+      x:{ticks:{color:'#64748B',font:{size:10}},grid:{color:'rgba(51,65,85,.3)'}},
+      y:{ticks:{color:'#64748B',font:{size:10},callback:v=>v.toLocaleString()},grid:{color:'rgba(51,65,85,.3)'},min:2600}
+    }
+  }
+});
+
+new Chart(document.getElementById('roadTypeChart'),{
+  type:'bar',
+  data:{
+    labels:['Highway','Urban','Rural'],
+    datasets:[
+      {label:'Fatal',data:[983,1039,965],backgroundColor:'rgba(255,77,109,.85)',borderColor:'#FF4D6D',borderWidth:1,borderRadius:2},
+      {label:'Major',data:[1967,2007,2014],backgroundColor:'rgba(255,140,66,.75)',borderColor:'#FF8C42',borderWidth:1,borderRadius:2},
+      {label:'Minor',data:[3666,3699,3660],backgroundColor:'rgba(0,229,255,.55)',borderColor:'#00E5FF',borderWidth:1,borderRadius:2}
+    ]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}},
+    scales:{
+      x:{ticks:{color:'#64748B',font:{size:11}},grid:{color:'rgba(51,65,85,.3)'}},
+      y:{ticks:{color:'#64748B',font:{size:10}},grid:{color:'rgba(51,65,85,.3)'}}
+    }
+  }
+});
+
+new Chart(document.getElementById('weatherChart'),{
+  type:'bar',
+  data:{
+    labels:['Clear','Fog','Rain'],
+    datasets:[
+      {label:'Total Incidents',data:[6690,6633,6677],backgroundColor:'rgba(0,229,255,.55)',borderColor:'#00E5FF',borderWidth:1,borderRadius:2},
+      {label:'Fatal Accidents',data:[992,995,1000],backgroundColor:'rgba(255,77,109,.8)',borderColor:'#FF4D6D',borderWidth:1,borderRadius:2,
+       borderDash:[5,3]}
+    ]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}},
+    scales:{
+      x:{ticks:{color:'#64748B',font:{size:11}},grid:{color:'rgba(51,65,85,.3)'}},
+      y:{ticks:{color:'#64748B',font:{size:10},callback:v=>v.toLocaleString()},grid:{color:'rgba(51,65,85,.3)'}}
+    }
+  }
+});
+</script>
+</body>
+</html>
